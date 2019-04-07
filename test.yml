@@ -1,0 +1,15 @@
+# yaml_file
+info:
+    name: 'example_name'
+    data_type: ['JPEG'] # image or other types will support later
+
+directory:
+    root_dir: '/home/apex/DataSet/ImageNet_2016/ILSVRC/Data/CLS-LOC/train'
+
+preprocess:
+    transforms:
+        transform_list: ['Scale']
+        image_size: 224
+    transforms_target:
+        transform_list: []
+
