@@ -11,6 +11,7 @@ import os
 
 import yaml
 import torch.utils.data as data
+from PIL import Image
 
 
 class BaseCustomDataset(data.Dataset):
@@ -27,10 +28,11 @@ class BaseCustomDataset(data.Dataset):
         # yaml_file
         info:
             name: 'example_name'
-            data_type: 'image' # image or other types will support later
+            data_type: ['jpeg', 'JPEG']     # choose which type files you want to load
+                                            # case sensitive
 
         directory:
-            root_dir:
+            root_dir: '~/Desktop/train' # must be absolute path
 
         preprocess:
             transforms:
@@ -58,8 +60,8 @@ class BaseCustomDataset(data.Dataset):
 
         self.root_dir = params['directory']['root_dir']
 
-        self.transforms = params['preorocess']['transforms']
-        self.transforms_target = params['preorocess']['transforms_target']
+        self.transforms = params['preprocess']['transforms']
+        self.transforms_target = params['preprocess']['transforms_target']
 
     def __getitem__(self, index):
         raise NotImplementedError
@@ -76,11 +78,11 @@ class BaseCustomDataset(data.Dataset):
         print("Data_type: ", self.data_type)
         print("====directory====")
         print("root_dir: ", self.root_dir)
-        print("===preorocess===")
+        print("===preprocess===")
         print("transforms: ", self.transforms)
         print("transforms_target: ", self.transforms_target)
 
-    def pre_analyse(self):
+    def pre_analyse(self, a, b, c):
         """
         Use to pre_analyse the dataset
 
@@ -92,7 +94,6 @@ class BaseCustomDataset(data.Dataset):
         raise NotImplementedError
 
 
-
 class CustomImageDataset(BaseCustomDataset):
     """
     CustomImageDataset:
@@ -100,11 +101,46 @@ class CustomImageDataset(BaseCustomDataset):
         Basic function is folllowing below:
     """
 
-    def __init__(self, yml_file_path):
-        super(CustomImageDataset, self).__init__()
+    def __init__(self, yml_file_path, debug=False):
+        """
+        inherit from BaseCustomDataset
+
+        Default to have these params:
+            self.name
+            self.data_type
+            self.root_dir
+            self.transforms
+            self.transforms_target
+
+        PARAMS:
+
+        yml_file_path : your yaml config_path
+        debug : defaut=False
+                if debug set true, it will print the label and data_path
+                in real time
+        """
+        super(CustomImageDataset, self).__init__(yml_file_path)
+        self.output_x = []
+        self.output_y = []
+        # create data here
+        _walk_instance = os.walk(self.root_dir)
+        for root, _, files in _walk_instance:
+            for item in files:
+                if item.endswith(tuple(self.data_type)):
+                    if debug:
+                        print("image_path:", os.path.join(self.root_dir, root.split('/')[-1], item))
+                        print("label:", root.split('/')[-1])
+                    raw_image_path = os.path.join(self.root_dir, root.split('/')[-1], item)
+                    self.output_x.append(raw_image_path)
+                    self.output_y.append(root.split('/')[-1])
+
 
     def __getitem__(self, index):
-        raise NotImplementedError
+        # output a batch
+        # we don't need to concern about the batch size
+        raw_image_batch = Image.open(self.output_x[index])
+        batch_x = raw_image_batch
+        return batch_x, self.output_y[index]
 
     def __len__(self):
-        raise NotImplementedError
+        return len(self.output_y)
